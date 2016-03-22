@@ -5,45 +5,48 @@ local lbnf=require'lbnf'
 local alt = lbnf.combineRules
 local rep = lbnf.repeatRule
 local seq = lbnf.sequenceRules
-local l = lbnf.stringPattern
+local p = lbnf.stringPattern
 local opt = lbnf.optionalRule
 local ref = lbnf.referenceRule
-
+local list = lbnf.listRule
 
 
 
 function getRule(l)
 
-local char = l"('[^']+')"
-local str = l'(".-[^\\]")'
-local id = l'([_%w]+[_%w%d]*)'
-local num = l"(-?%d+%.?%d*)"
+local char = p"('[^']+')"
+local str = p'(".-[^\\]")'
+local id = p'([_%w]+[_%w%d]*)'
+local num = p"(-?%d+%.?%d*)"
 -- id.handler=function(x, c, o) print(x, c, o) if o=='x322' then  return false end end
 local gmr1 = setmetatable({}, { __index=ref })
 
 local value = alt(
 	gmr1.fncall,
-	id, num, str, char, seq( l'%(', gmr1.expr, l'%)' ) 
+	id, num, str, char, seq( p'%(', gmr1.expr, p'%)' ) 
 )
 -- gmr1.expr = seq(
 -- 	value
--- 		,rep(seq( alt( l'(%-)', l'(%+)', l'(%*)',seq(l'(%|)', l'(%|)') ), value))
+-- 		,rep(seq( alt( p'(%-)', p'(%+)', p'(%*)',seq(p'(%|)', p'(%|)') ), value))
 -- )
-gmr1.expr =seq(value, opt(seq(alt( l'(%-)', l'(%+)', l'(%*)' ), gmr1.expr)) )
+-- gmr1.expr =seq(  value, opt(seq(alt( p'(%-)', p'(%+)', p'(%*)' ), gmr1.expr )) )
+gmr1.expr =list(value, alt( p'(%-)', p'(%+)', p'(%*)' ) )
+
+-- 
 -- gmr1.expr =alt(
--- 	seq(value, alt( l'(%-)', l'(%+)', l'(%*)' ), gmr1.expr),
+-- 	seq(value, alt( p'(%-)', p'(%+)', p'(%*)' ),  gmr1.expr),
 -- 	value
 -- )
 -- gmr1.expr=
 -- gmr1.expr_list =alt(
--- 	seq( gmr1.expr, l',', gmr1.expr_list ),
+-- 	seq( gmr1.expr, p',', gmr1.expr_list ),
 -- 	gmr1.expr
 -- )
-gmr1.expr_list = rep(seq( gmr1.expr, opt(l',') ))
--- gmr1.expr_list = seq( gmr1.expr, opt(seq(l',', gmr1.expr_list)) )
+gmr1.expr_list = list( gmr1.expr, p',' )
+-- gmr1.expr_list = seq( gmr1.expr, opt(seq(p',', gmr1.expr_list)) )
 
-gmr1.fncall = seq( id, l'%(', seq( gmr1.expr,rep(seq( l',' ,gmr1.expr ))) ,l'%)' )
--- gmr1.fncall = seq( id^'func', l'%(', rep(seq( gmr1.expr, l',?' ))^'args' ,l'%)' )
+gmr1.fncall = seq( id, p'%(', opt(gmr1.expr_list), p'%)' )
+-- gmr1.fncall = seq( id^'func', p'%(', rep(seq( gmr1.expr, p',?' ))^'args' ,p'%)' )
 -- gmr1.fncall.handler=print
   return gmr1.expr
 end
@@ -52,7 +55,7 @@ end
 
 local src0 = '66||6 *063+(1+ x +34+6) +  func( x*6,4*sin(0))'
 -- local src = ' 1 + 2 * f( 31  )  + 0'
-local src = ' 1 + 2 -3 * ( 31 - fn32  (  321 *  x322,( 4 * sin(0) ) )  )  + 0'
+local src = ' 1 + 2 -3 * ( 31 - fn32  (  321 *  x322, 4 * sin(0)  ) + f0() )  + 0'
 
 print()
 --inspect(i, (c), #src)
@@ -82,7 +85,7 @@ out1=tostring_(ctx.capture):gsub('(%s+)', ' ')
 -- assert(out1==out2)
 
 
-print(tostring_(ctx.capture))
+print(tostring_(c))
 print(src)
 -- inspect(i,  ctx.capture)
 

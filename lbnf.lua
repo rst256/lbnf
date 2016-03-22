@@ -1,7 +1,12 @@
+local class = require'class'
 
 local M = {}
 
+local lbnfoper = class.lbnfoper{
 
+
+
+}
 
 
 
@@ -13,7 +18,7 @@ end
 
 
 
-local lbnfoper_mt = {}
+local lbnfoper_mt = { __index={} }
 local lbnfoper_attribs = { captin=1, }
 local lbnfoper_funcs = {}
 
@@ -22,65 +27,65 @@ local lbnfoper_funcs = {}
 function lbnfoper_funcs:combineRules(source, start, ctx)
 	local idx, captopt = start, rawget(self, 'capture_options')
 	for _, rule in ipairs(self.rules) do
-		local c2={}
-		local idx, out = rule(source, start, indexof(ctx, {capture=c2}))
-		if idx then
-			--if #c2==1 then table.insert(ctx.capture, c2[1]) else
-				table.insert(ctx.capture, c2)  --end
-
-			return idx, out
-		end
+		local idx, out = rule(source, start, ctx)
+		if idx~=nil then return idx, out end
 	end
 end
 
 function lbnfoper_funcs:repeatRule(source, start, ctx)
-	local idx= start
+	local idx, out = start, {}
 	::loop::
 		local i, c = self.rule(source, idx, ctx)
-		if not i then return idx, c end assert(i~=idx)
-		idx = i;
+		if not i then return idx, out end assert(i~=idx)
+		idx = i; table.insert(out, c)
 	goto loop
 end
 
 function lbnfoper_funcs:seq(source, start, ctx)
-	local idx = start
+	local idx, out = start, {}
 	for k, rule in ipairs(self.seq_rules) do
 		local i, c = rule(source, idx, ctx)
-		if i then idx = i;	else return end
+		if i==nil then return end
+		idx = i; table.insert(out, c)
 	end
 	return idx, out
 end
 
--- function lbnfoper_funcs:listRule(source, start, ctx)
--- 	local idx= start
--- 	::loop::
--- 		local i, c = (self.first or self.items)(source, idx, ctx)
--- 		if not i then return end idx = i 
--- 
--- 	goto loop
--- end
--- 
--- function M.listRule(list)
--- 	list.parse=lbnfoper_funcs.listRule
--- 	return setmetatable(list, lbnfoper_mt)
--- end
+function lbnfoper_funcs:listRule(source, start, ctx)
+	local idx, out = start, {}
+	::loop::
+		local i, c = self.item(source, idx, ctx)
+		if i==nil then if idx==start then return else return idx, out end end
+		idx = i; table.insert(out, c)
+
+		local i, c = self.separator(source, idx, ctx)
+		if i==nil then return idx, out end 
+		idx = i; table.insert(out, c)
+
+	goto loop
+end
+
+function M.listRule(list_item_rule, separator_rule)
+	return setmetatable({ 
+		item=list_item_rule, separator=separator_rule, parse=lbnfoper_funcs.listRule}, lbnfoper_mt)
+end
 
 function lbnfoper_funcs:ultraFilter(source, start, ctx)
-	local capname = rawget(self, 'capture_name')
+	-- local capname = rawget(self, 'capture_name')
 	local idx, out = self.filter_func(source, start, self.filter_opts)
-	if idx then
-		if capname then ctx.capture[capname]=out else 	table.insert(ctx.capture, out)  end
-	end
-	return idx
+	-- if idx then
+	-- 	if capname then ctx.capture[capname]=out else 	table.insert(ctx.capture, out)  end
+	-- end
+	return idx, out
 end
 
 
--- function lbnfoper_mt:__index(name)
+-- function lbnfoper_mt.__index.capture(name)
 -- 	if lbnfoper_attribs[name] then rawset(self, name, true) end
 -- 	return self
 -- end
--- 
--- 
+
+
 
 
 
@@ -148,7 +153,9 @@ end
 function M.stringPattern(pattern)
 	return M.ultraFilter(function(source, start, pattern)
 		local out, idx = source:match('^%s*'..pattern..'()', start)
-		if not idx then 	return out else return idx, out end
+		if idx==nil then assert(type(out)=='number' or out==nil) return out end
+		assert(type(idx)=='number' ) 
+		return idx, out 
 	end, pattern)
 end
 
@@ -156,7 +163,8 @@ end
 
 function M.optionalRule(optional_rule)
 	return function(source, start, ctx)
-		return optional_rule(source, start, ctx) or start
+		local idx, out = optional_rule(source, start, ctx)
+		if idx==nil then return start else return idx, out end
 	end
 end
 
