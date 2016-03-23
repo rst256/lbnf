@@ -30,10 +30,7 @@ local value = alt(
 -- 		,rep(seq( alt( p'(%-)', p'(%+)', p'(%*)',seq(p'(%|)', p'(%|)') ), value))
 -- )
 -- gmr1.expr =seq(  value, opt(seq(alt( p'(%-)', p'(%+)', p'(%*)' ), gmr1.expr )) )
-gmr1.expr1 =list(value, p'(%*)'  )
-gmr1.expr =list(list(value, p'(%*)'  ), alt( p'(%-)', p'(%+)' ) )
--- gmr1.expr =gmr1.expr2
--- gmr1.expr =list(value, alt( p'(%-)', p'(%+)', p'(%*)' ) )
+gmr1.expr =list(value, alt( p'(%-)', p'(%+)', p'(%*)' ) )
 
 -- 
 -- gmr1.expr =alt(
@@ -56,9 +53,9 @@ end
 
 
 
-local src = '1 + 2 + 3 * 4 - 5-55 + 6-66 * 7 * 8 *9 -0'
+local src0 = '66||6 *063+(1+ x +34+6) +  func( x*6,4*sin(0))'
 -- local src = ' 1 + 2 * f( 31  )  + 0'
--- local src = ' 1 + 2 -3 * ( 31 - fn32  (  321 *  x322, 4 * sin(0)  ) + f0() )  + 0'
+local src = ' 1 + 2 -3 * ( 31 - fn32  (  321 *  x322, 4 * sin(0)  ) + f0() )  + 0'
 
 print()
 --inspect(i, (c), #src)

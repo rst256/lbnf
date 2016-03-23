@@ -99,15 +99,11 @@ function lbnfoper_mt:__call(source, start, ctx)
 	-- 	end
 	-- else
 		local idx, out = self:parse(source, start, ctx)	
-		if idx==nil then return end
-		if self.handler then 
+		if idx~=nil and self.handler then 
 			local result = self:handler(ctx, out)
 			if result==false then return elseif result==nil then return idx, out else return idx, result end
 		else
-			if type(out)~='table' then return idx, out end
-			if out==nil then return idx
-			elseif #out==1 then return idx, out[1] 
-			else return idx, out end
+			return idx, out
 		end
 		-- local c2={}
 		-- local idx, out = rule(source, start, indexof(ctx, {capture=c2}))
