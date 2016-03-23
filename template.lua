@@ -14,7 +14,7 @@ local template_mt = { __metatable='template' }
 function M.open(file_name)
 	local f = io.open(file_name)
   if f==nil then return nil end
-  return M.new(f:read'*a')
+  return M.new(f:read'*a', file_name)
 end
 
 local path = "?.lua;modules/?.lua"
@@ -77,7 +77,7 @@ function M.echo(src)
   -- })
 end
 
-function M.new(src)
+function M.new(src, from_filename)
   local s=src:gsub('^#([^\n]*)', '@[local %1 = ...]')
 
   local function pp_block(s)
@@ -126,7 +126,7 @@ function M.new(src)
   	__call=function(self, ...) return fn(...) end
   })
   fn, er = load(pp_block(s), '', 't', env)
-  if not fn then error(er, 2) end
+  if not fn then error('Syntax error in template file "'..(from_filename or '<inline>')..'"\n'..er) end
   return env
 end
 

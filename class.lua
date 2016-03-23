@@ -1,4 +1,5 @@
 
+
 local M_mt = {}
 
 function M_mt:__index(name)
@@ -49,8 +50,10 @@ function M_mt:__newindex(class_name, members)
 		if type(new_class.__index)=='table' then
 			local ___index = new_class.__index
 			__index = function(self, name) return ___index[name] end
-		else
+		elseif type(new_class.__index)=='function' then
 			__index = new_class.__index
+		else
+			__index = function() end
 		end
 		new_class.__index = function(self, name)
 			local raw_method = members.methods[name]
@@ -87,6 +90,7 @@ end
 
 local M = {
 	__classes = {},
+	__private = {},
 	gen_tostring = false,
 	mt_names = {
 		index='__index', __index='__index',
