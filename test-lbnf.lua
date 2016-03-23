@@ -57,8 +57,7 @@ g.fncall = seq({ id, p'%(', (g.expr_list), p'%)' }, {[0]='fncall', 'fname', 'arg
 
 g.fndef = seq({ l'function', id, p'%(', list(id, l','), p'%)', g.body, l'end' }, {[0]='fndef', 'fname', 'args', 'body' })
 g.ifstat = seq({ 
-	l'if', g.expr, l'then', g.body, rep(seq({ l'elseif', g.expr, l'then', g.body })), opt(seq{ l'else', g.body }),l'end' }, 
-{[0]='ifstat', 'cond', 'then' })
+	l'if', g.expr, l'then', g.body, opt(seq{ l'else', g.body }),l'end' }, {[0]='ifstat', 'cond', 'then', 'else' })
 g.assign = seq({ id, l'=', g.expr }, {[0]='assign', 'lvar', 'rval' } )
 g.Return = seq({ l'return', g.expr }, {[0]='return' })
 
@@ -80,17 +79,12 @@ if x+6 or -666 .. 'fsdfsdf' then
 		if r then print(r) end
 		return r+1
 	end
-elseif x>0 then
-	TR(x)
-elseif x==0 then
 else
 	f=0;
 end
 
 ]]
 
-print()
---inspect(i, (c), #src)
 
 local function tostring_(ss, dep)
 	if type(ss)~='table' then return tostring(ss) end
@@ -115,10 +109,9 @@ out1=tostring_(ctx.capture):gsub('(%s+)', ' ')
 
 
 
--- inspect(c)
 print(tostring_(c))
+print()
 print(src)
--- inspect(i,  ctx.capture)
 
 
 

@@ -1,11 +1,7 @@
-local class = require'class'
 require'string_ext'
 
 local M = {}
 
--- local function ()
---   
--- end
 
 function M.combineRules(combined_rules)
 	return function(source, start, pattern)
@@ -92,28 +88,11 @@ function M.referenceRule(table_of_rules, rule_name)
 	return function(s, start, ctx)
 		local rule = table_of_rules[rule_name]
 		if not rule then error('referenceRule: '..table_of_rules..' ["'..rule_name..'"] == nil') end
-		-- local c2={}
-		-- local idx, out = rule(s, start, indexof(ctx, {capture=c2}))
 		local idx, out = rule(s, start, (ctx ))
-		-- if idx then table.insert(ctx.capture, c2) print(idx, table.unpack(c2)) end
-		return idx, out-- or c2
+		return idx, out
 	end
 end
 
--- M.Grammar = class.Grammar{
--- 	ctx=function(...)
--- 		local s = {}
--- 		for _, v in ipairs{...} do s[v] = true end
--- 		return { members=s }
--- 	end,
---  	newindex = function(self, name, rule)
---  		rawset(self, name, rule)
---  	end,
---  	index = M.referenceRule
---  	call = function(self, name, rule)
---  		rawset(self, name, rule)
---  	end,
--- }
--- 
+
 
 return M
