@@ -21,16 +21,16 @@ local num = p"(-?%d+%.?%d*)"
 -- id.handler=function(x, c, o) print(x, c, o) if o=='x322' then  return false end end
 local gmr1 = setmetatable({}, { __index=ref })
 
-local value = alt(
+local value = alt({
 	gmr1.fncall,
-	id, num, str, char, seq( p'%(', gmr1.expr, p'%)' ) 
-)
--- gmr1.expr = seq(
--- 	value
--- 		,rep(seq( alt( p'(%-)', p'(%+)', p'(%*)',seq(p'(%|)', p'(%|)') ), value))
--- )
--- gmr1.expr =seq(  value, opt(seq(alt( p'(%-)', p'(%+)', p'(%*)' ), gmr1.expr )) )
-gmr1.expr =list(value, alt( p'(%-)', p'(%+)', p'(%*)' ) )
+	id, num, str, char, seq({ p'%(', gmr1.expr, p'%)' }, { [0]='expr' }) 
+})
+
+gmr1.expr1 =list(value, p'(%*)'  )
+gmr1.expr =list(gmr1.expr1, alt({ p'(%-)', p'(%+)' }) )
+
+
+-- gmr1.expr =list(value, alt( p'(%-)', p'(%+)', p'(%*)' ) )
 
 -- 
 -- gmr1.expr =alt(
@@ -45,7 +45,7 @@ gmr1.expr =list(value, alt( p'(%-)', p'(%+)', p'(%*)' ) )
 gmr1.expr_list = list( gmr1.expr, p',' )
 -- gmr1.expr_list = seq( gmr1.expr, opt(seq(p',', gmr1.expr_list)) )
 
-gmr1.fncall = seq( id, p'%(', opt(gmr1.expr_list), p'%)' )
+gmr1.fncall = seq({ id, p'%(', (gmr1.expr_list), p'%)' }, {[0]='fncall', 'func_name', 'args' })
 -- gmr1.fncall = seq( id^'func', p'%(', rep(seq( gmr1.expr, p',?' ))^'args' ,p'%)' )
 -- gmr1.fncall.handler=print
   return gmr1.expr
@@ -55,7 +55,8 @@ end
 
 local src0 = '66||6 *063+(1+ x +34+6) +  func( x*6,4*sin(0))'
 -- local src = ' 1 + 2 * f( 31  )  + 0'
-local src = ' 1 + 2 -3 * ( 31 - fn32  (  321 *  x322, 4 * sin(0)  ) + f0() )  + 0'
+local src = ' 1 + 2 -3 * 4*5*6 +7*(9+ 0)'
+-- local src = ' 1 + 2 -3 * ( 31 - fn32  (  321 *  x322, 4 * sin(0)  ) + f0(3) )  + 0'
 
 print()
 --inspect(i, (c), #src)
@@ -85,7 +86,7 @@ out1=tostring_(ctx.capture):gsub('(%s+)', ' ')
 -- assert(out1==out2)
 
 
-print(tostring_(c))
+inspect(c)
 print(src)
 -- inspect(i,  ctx.capture)
 

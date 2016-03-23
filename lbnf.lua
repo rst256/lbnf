@@ -59,16 +59,13 @@ function lbnfoper_funcs:listRule(source, start, ctx)
 		idx = i; table.insert(out, c)
 
 		local i, c = self.separator(source, idx, ctx)
-		if i==nil then return idx, out end 
+		if i==nil then if #out==1 then return idx, out[1] end  return idx, out end 
 		idx = i; table.insert(out, c)
 
 	goto loop
 end
 
-function M.listRule(list_item_rule, separator_rule)
-	return setmetatable({ 
-		item=list_item_rule, separator=separator_rule, parse=lbnfoper_funcs.listRule}, lbnfoper_mt)
-end
+
 
 function lbnfoper_funcs:ultraFilter(source, start, ctx)
 	-- local capname = rawget(self, 'capture_name')
@@ -136,27 +133,69 @@ end
 
 
 
-function M.combineRules(...)
-	return setmetatable({ parse=lbnfoper_funcs.combineRules, rules={...} }, lbnfoper_mt)
+function M.combineRules(combined_rules)
+	return function(source, start, pattern)
+		local idx = start
+		for _, rule in ipairs(combined_rules) do
+			local idx, out = rule(source, start, ctx)
+			if idx~=nil then return idx, out end
+		end
+	end
 end
 
 function M.repeatRule(repeated_rule)
-	return setmetatable({ parse=lbnfoper_funcs.repeatRule, rule=repeated_rule }, lbnfoper_mt)
+	return function(source, start, pattern)
+		local idx, out = start, {}
+		::loop::
+			local i, c = repeated_rule(source, idx, ctx)
+			if not i then return idx, out end assert(i~=idx)
+			idx = i; table.insert(out, c)
+		goto loop
+	end
 end
 
-function M.sequenceRules(...)
-	return setmetatable({ parse=lbnfoper_funcs.seq, seq_rules={...} }, lbnfoper_mt)
+function M.listRule(item, separator)
+	return function(source, start, pattern)
+		local idx, out = start, {}
+		::loop::
+			local i, c = item(source, idx, ctx)
+			if i==nil then if idx==start then return else return idx, out end end
+			idx = i; table.insert(out, c)
+	
+			local i, c = separator(source, idx, ctx)
+			if i==nil then if #out==1 then return idx, out[1] end  return idx, out end 
+			idx = i; table.insert(out, c)
+	
+		goto loop
+	end
+end
+
+function M.sequenceRules(seq_rules, seq_names)
+	local seq_names = seq_names or {}
+	return function(source, start, pattern)
+		local idx, out, ns_idx = start, { [0]=seq_names[0] }, 0
+		for _, rule in ipairs(seq_rules) do
+			local i, c = rule(source, idx, ctx)
+			if i==nil then return end 
+			if c~=nil then 
+				ns_idx=ns_idx+1
+				if seq_names[ns_idx] then out[seq_names[ns_idx]]=c else table.insert(out, c) end
+			end 
+			idx = i; 
+		end
+		return idx, out
+	end
 end
 
 
 
 function M.stringPattern(pattern)
-	return M.ultraFilter(function(source, start, pattern)
+	return function(source, start, ctx)
 		local out, idx = source:match('^%s*'..pattern..'()', start)
 		if idx==nil then assert(type(out)=='number' or out==nil) return out end
 		assert(type(idx)=='number' ) 
 		return idx, out 
-	end, pattern)
+	end
 end
 
 
